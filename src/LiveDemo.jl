@@ -8,6 +8,7 @@ using Lif: set!
 
 using PyPlot, Plot
 
+abstract type Stimulus end
 # ============================================================================ #
 mutable struct ChunkArray
     nel::Int
@@ -37,7 +38,7 @@ function add!(x::ChunkArray, v::Float64)
     end
 end
 # ============================================================================ #
-mutable struct StimGen
+mutable struct StimGen <: Stimulus
     output::Float64
     interval::Vector{Float64}
     amp::Float64
@@ -92,7 +93,7 @@ function generate2!(s::StimGen, id::Int64, t::Float64, f::Float64,
     return float(out > 0.5)
 end
 # ============================================================================ #
-mutable struct StimState
+mutable struct StimState <: Stimulus
     state::Vector{Bool}
     amp::Float64
     inc::Float64
@@ -111,18 +112,77 @@ function getstim(s::StimState, id::Integer)
     end
 end
 # ============================================================================ #
-function demo(dur::Float64, xi::Float64, amp::Float64, wi::Float64, speed::Int,
-    interval::Vector{Float64}, fig=nothing, ncell=2)
+mutable struct Demo
+    net::LIFNetwork
+    speed::Int
+    fig::PyPlot.Figure
+    ax::PyCall.PyObject
+end
+"""
+    Demo(net::Network, stim::Stimulus, speed::Int=5)
+"""
+function Demo(net::LIFNetwork, speed::Int=5)
+    h = default_figure()
+    return Demo(net, speed, h, h[:axes][1])
+end
+# ---------------------------------------------------------------------------- #
+function reset!(demo::Demo)
+    demo.fig = default_figure(demo.fig)
+    demo.ax = demo.fig[:axes][1]
+    Networks.reset!(demo.net)
+end
+# ============================================================================ #
+"""
+    build_demo([
+            (1=>3, .8),
+            (2=>3, .6)
+        ])
+"""
+function build_demo{T<:Integer, F<:Number}(inp::Vector{Tuple{Pair{T,T}, F}})
+    ncell = 0
+    for x in inp
+        ncell = max(ncell, maximum(x[1]))
+    end
 
-    TMAX = 50.0 # max time of x axis in MS
+    net = LIFNetwork(ncell, 0.0)
 
-    dt = 0.05 # timestep in MS
+    for x in net
+        set!(x, :threshold, 1.8)
+        set!(x, :rm, 3.5)
+        set!(x, :tau, 4.5)
+        set!(x, :vspike, 4.0)
+    end
 
-    npt = round(Int64, TMAX / dt)
+    connect!(net)
+    for x in inp
+        connect!(net, Tuple(x[1]), (Synapses.Static, x[2], 3.0, 2.0))
+    end
+    return Demo(net, 5)
+end
+function build_demo{T<:Integer}(pairs::Vector{Pair{T,T}})
+    return build_demo([(x, 1.8) for x in pairs])
+end
+function build_demo(ncell::Integer)
+    return build_demo([(x=>ncell, 1.8) for x in 1:(ncell-1)])
+end
+# ============================================================================ #
+function run(demo::Demo, fstim::Function, duration::Number=+Inf)
 
-    KN = speed
+    const TMAX = 50.0 # max time of x axis in MS
 
-    ncall = round(Int64, dur / (dt * KN))
+    const dt = 0.05 # timestep in MS
+
+    const npt = round(Int64, TMAX / dt)
+
+    const ncell = length(demo.net)
+
+    if isinf(duration)
+        ncall = round(Int64, 200.0 / (dt * demo.speed))
+        repeat = true
+    else
+        ncall = round(Int64, duration / (dt * demo.speed))
+        repeat = false
+    end
 
     TNOW = 0.0
 
@@ -131,13 +191,13 @@ function demo(dur::Float64, xi::Float64, amp::Float64, wi::Float64, speed::Int,
     data = ChunkArray[ChunkArray(npt) for k in 1:ncell]
     stim = ChunkArray[ChunkArray(npt) for k in 1:ncell]
 
-    fig = default_figure(fig)
-    ax = fig[:axes][1]
+    reset!(demo)
 
+    sca(demo.ax)
     xlim(0, TMAX)
     ylim(-2.0, 4.0)
 
-    local col::Vector{AbstractString}
+    local col::Vector{String}
     if ncell == 2
         col = ["blue", "red"]
     elseif ncell == 3
@@ -155,51 +215,17 @@ function demo(dur::Float64, xi::Float64, amp::Float64, wi::Float64, speed::Int,
         stim_line[k] = plot([], [], color=col[k], linewidth=3)[1]
     end
 
-    net = LIFNetwork(ncell, xi)
-
-    for x in net
-        set!(x, :threshold, 1.8)
-        set!(x, :rm, 3.5)
-        set!(x, :tau, 4.5)
-        set!(x, :vspike, 4.0)
-    end
-
-    connect!(net)
-    for k = 1:ncell-1
-        connect!(net, (k, ncell), (Synapses.Static, wi, 3.0, 2.0))
-    end
-
-    # sg = StimGen(interval, amp, collect(1:ncell-1))
-    # if ncell < 3
-    #     fstim(id, t) = generate!(sg, id, t)
-    # else
-    #     sg2 = StimGen([interval[1]+5.0, interval[2]], amp, collect(1:ncell-1))
-    #     fstim(id, t) = begin
-    #         if id == 1
-    #             ij = generate!(sg, id, t)
-    #         elseif (id == 2) && (t >= 60.0)
-    #             ij = generate!(sg2, id, t)
-    #         else
-    #             ij = 0.0
-    #         end
-    #     end
-    # end
-
-    sg = StimState(ncell)
-
-    fstim(id, t) = getstim(sg, id)
-
     ts = [Vector{Float64}() for x in 1:ncell]
 
     # ------------------------------------------------------------------------ #
     function run_demo(k)
-
-        for kt = 1:KN
+        for kt = 1:demo.speed
             add!(time, TNOW)
-            vm, spk = Networks.update!(net, fstim, dt, TNOW)
+            vm, spk = Networks.update!(demo.net, fstim, dt, TNOW)
             for kc = 1:ncell
-                add!(data[kc], vm[kc] - (.2 * (kc - 1)))
-                add!(stim[kc], fstim(kc, TNOW) - 1.8)
+                offset = .2 * (kc - 1)
+                add!(data[kc], vm[kc] - offset)
+                add!(stim[kc], fstim(kc, TNOW) - (1.8 - offset))
                 if spk[kc]
                     push!(ts[kc], TNOW * 0.001)
                 end
@@ -213,87 +239,37 @@ function demo(dur::Float64, xi::Float64, amp::Float64, wi::Float64, speed::Int,
         end
 
         if TNOW > TMAX
-            ax[:set_xlim](time.d[1], time.last)
+            demo.ax[:set_xlim](time.d[1], time.last)
         end
 
-        fig[:canvas][:draw]()
-
+        demo.fig[:canvas][:draw]()
     end
     # ------------------------------------------------------------------------ #
-    stim_on(event) = setstate!(sg, event[:button])
-    # ------------------------------------------------------------------------ #
 
-    plt[:connect]("button_press_event", stim_on)
-
-    anim = animation.FuncAnimation(fig, run_demo, frames=ncall, interval=10, repeat=true, blit=false)
+    anim = animation.FuncAnimation(demo.fig, run_demo, frames=ncall, interval=10, repeat=repeat, blit=false)
 
     # ------------------------------------------------------------------------ #
-    function end_demo(event)
-        if event[:key] == "escape"
+    function key_press(event)
+        # if event[:key] in ["1", "2", "3"]
+        #     setstate!(sg, parse(Int, event[:key]))
+        # elseif event[:key] == "up"
+        #     sg.amp *= (1 + sg.inc)
+        # elseif event[:key] == "down"
+        #     sg.amp *= (1 - sg.inc)
+        # else
+        if event[:key] == " "
             anim[:event_source][:stop]()
-        elseif event[:key] == "up"
-            sg.amp *= (1 + sg.inc)
-        elseif event[:key] == "down"
-            sg.amp *= (1 - sg.inc)
+        elseif event[:key] == "enter"
+            anim[:event_source][:start]()
         end
     end
     # ------------------------------------------------------------------------ #
 
-    plt[:connect]("key_press_event", end_demo)
-
-    return fig, ts
-
-end
-# ============================================================================ #
-function run(n = 1, fig = nothing)
-    dur = 95.0
-    xi = 0.0
-    amp = 0.5
-    wi = 0.0
-    speed = 3
-    interval = [20.0, 20.0]
-    ncell = 2
-
-    if n == 2
-        speed = 5
-        amp = 0.7
-        interval = [10.0, 6.0]
-        dur = 55.0
-
-    elseif n == 3
-        speed = 5
-        amp = 0.7
-        interval = [20.0, 6.0]
-        wi = 1.8
-
-    elseif n == 4
-        speed = 5
-        amp = 0.7
-        interval = [20.0, 6.0]
-        wi = 1.8
-        # xi = 0.05
-        dur = 200.0
-        ncell = 3
-
-    elseif n == 5
-        speed = 5
-        amp = 0.8
-        interval = [20.0, 6.0]
-        wi = 1.8
-        xi = 0.05
-        dur = 200.0
-        ncell = 3
-
+    if repeat
+        plt[:connect]("key_press_event", key_press)
     end
 
-    fig = demo(dur, xi, amp, wi, speed, interval, fig, ncell)
-
-    # print("Press [ENTER] to begin >> ")
-    # readline(STDIN)
-
-    plt[:show]()
-
-    return fig
+    return ts
 end
 # ============================================================================ #
 

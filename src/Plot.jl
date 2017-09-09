@@ -101,16 +101,17 @@ function closeall()
     plt[:close]()
 end
 # ============================================================================ #
-function default_figure(h=nothing)
-    if h == nothing
-        h = figure(facecolor="white")
-    elseif isa(h, PyPlot.Figure)
-        h[:set_facecolor]("white")
-        ax = h[:get_axes]()
-        if !isempty(ax)
-            for x in ax
-                delaxes(x)
-            end
+function default_figure(h::PyPlot.Figure=gcf())
+
+    if !plt[:fignum_exists](h[:number])
+        h = figure()
+    end
+
+    h[:set_facecolor]("white")
+    ax = h[:get_axes]()
+    if !isempty(ax)
+        for x in ax
+            delaxes(x)
         end
     end
 

@@ -1,7 +1,7 @@
 
 module LiveDemo
 
-using Networks, PyCall
+using Networks, PyCall, LifConfig
 using Lif: set!
 
 @pyimport matplotlib.animation as animation
@@ -93,25 +93,6 @@ function generate2!(s::StimGen, id::Int64, t::Float64, f::Float64,
     return float(out > 0.5)
 end
 # ============================================================================ #
-mutable struct StimState <: Stimulus
-    state::Vector{Bool}
-    amp::Float64
-    inc::Float64
-end
-StimState(n::Integer) = StimState(falses(n), 1.0, 0.1)
-function setstate!(s::StimState, id::Integer)
-    if 0 < id <= length(s.state)
-        s.state[id] = !s.state[id]
-    end
-end
-function getstim(s::StimState, id::Integer)
-    if 0 < id <= length(s.state)
-        return s.state[id] ? s.amp : 0.0
-    else
-        return 0.0
-    end
-end
-# ============================================================================ #
 mutable struct Demo
     net::LIFNetwork
     speed::Int
@@ -127,7 +108,10 @@ function Demo(net::LIFNetwork, speed::Int=5)
 end
 # ---------------------------------------------------------------------------- #
 function reset!(demo::Demo)
-    demo.fig = default_figure(demo.fig)
+    # if we always close the figure we avoid the "not responding to keypresses"
+    # issue *AND* we get focus back on the figure when run() exits...
+    close(demo.fig)
+    demo.fig = default_figure()
     demo.ax = demo.fig[:axes][1]
     Networks.reset!(demo.net)
 end
@@ -138,7 +122,7 @@ end
             (2=>3, .6)
         ])
 """
-function build_demo{T<:Integer, F<:Number}(inp::Vector{Tuple{Pair{T,T}, F}})
+function build_demo{T<:Integer, F<:Real}(inp::Vector{Tuple{Pair{T,T}, F}})
     ncell = 0
     for x in inp
         ncell = max(ncell, maximum(x[1]))
@@ -155,18 +139,55 @@ function build_demo{T<:Integer, F<:Number}(inp::Vector{Tuple{Pair{T,T}, F}})
 
     connect!(net)
     for x in inp
-        connect!(net, Tuple(x[1]), (Synapses.Static, x[2], 3.0, 2.0))
+        connect!(net, Tuple(x[1]), (Synapses.Static, x[2], 2.0, 2.0))
     end
     return Demo(net, 5)
 end
+"""
+    build_demo([1=>3, 2=>3])
+"""
 function build_demo{T<:Integer}(pairs::Vector{Pair{T,T}})
     return build_demo([(x, 1.8) for x in pairs])
 end
+"""
+    build_demo(2)
+"""
 function build_demo(ncell::Integer)
     return build_demo([(x=>ncell, 1.8) for x in 1:(ncell-1)])
 end
 # ============================================================================ #
-function run(demo::Demo, fstim::Function, duration::Number=+Inf)
+mutable struct StimState <: Stimulus
+    state::Vector{Bool}
+    amp::Vector{Float64}
+    inc::Float64
+end
+# ---------------------------------------------------------------------------- #
+StimState(demo::Demo) = StimState(length(demo.net))
+StimState(n::Integer) = StimState(falses(n), ones(Float64, n), 0.1)
+StimState{T<:Real}(a::AbstractArray{T,1}) = StimState(falses(a), a, 0.1)
+# ============================================================================ #
+function keypressed(s::StimState, key::String)
+    if key in ["1", "2", "3"]
+        id = parse(Int8, key)
+        if 0 < id <= length(s.state)
+            s.state[id] = !s.state[id]
+        end
+    end
+end
+# ============================================================================ #
+function getstim(s::StimState, id::Integer, t::Time)
+    if 0 < id <= length(s.state)
+        return s.state[id] ? s.amp[id] : 0.0
+    else
+        return 0.0
+    end
+end
+# ============================================================================ #
+function run(demo::Demo, duration::Real=+Inf)
+    return run(demo, StimState(length(demo.net)), duration)
+end
+# ---------------------------------------------------------------------------- #
+function run(demo::Demo, stimgen::Stimulus, duration::Real=+Inf)
 
     const TMAX = 50.0 # max time of x axis in MS
 
@@ -217,6 +238,8 @@ function run(demo::Demo, fstim::Function, duration::Number=+Inf)
 
     ts = [Vector{Float64}() for x in 1:ncell]
 
+    fstim(id::Integer, t::Time) = getstim(stimgen, id, t)
+
     # ------------------------------------------------------------------------ #
     function run_demo(k)
         for kt = 1:demo.speed
@@ -250,17 +273,12 @@ function run(demo::Demo, fstim::Function, duration::Number=+Inf)
 
     # ------------------------------------------------------------------------ #
     function key_press(event)
-        # if event[:key] in ["1", "2", "3"]
-        #     setstate!(sg, parse(Int, event[:key]))
-        # elseif event[:key] == "up"
-        #     sg.amp *= (1 + sg.inc)
-        # elseif event[:key] == "down"
-        #     sg.amp *= (1 - sg.inc)
-        # else
         if event[:key] == " "
             anim[:event_source][:stop]()
         elseif event[:key] == "enter"
             anim[:event_source][:start]()
+        else
+            keypressed(stimgen, event[:key])
         end
     end
     # ------------------------------------------------------------------------ #

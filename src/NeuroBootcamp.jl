@@ -1,6 +1,10 @@
 
 module NeuroBootcamp
 
+if !(@__DIR__ in LOAD_PATH)
+    push!(LOAD_PATH, @__DIR__)
+end
+
 using Networks, PyCall, LifConfig
 using Lif: set!
 

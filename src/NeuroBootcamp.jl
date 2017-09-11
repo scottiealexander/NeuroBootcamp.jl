@@ -1,5 +1,5 @@
 
-module LiveDemo
+module NeuroBootcamp
 
 using Networks, PyCall, LifConfig
 using Lif: set!
@@ -7,6 +7,8 @@ using Lif: set!
 @pyimport matplotlib.animation as animation
 
 using PyPlot, Plot
+
+export build_demo, run, LiveDemo
 
 abstract type Stimulus end
 # ============================================================================ #
@@ -93,21 +95,21 @@ function generate2!(s::StimGen, id::Int64, t::Float64, f::Float64,
     return float(out > 0.5)
 end
 # ============================================================================ #
-mutable struct Demo
+mutable struct LiveDemo
     net::LIFNetwork
     speed::Int
     fig::PyPlot.Figure
     ax::PyCall.PyObject
 end
 """
-    Demo(net::Network, stim::Stimulus, speed::Int=5)
+    LiveDemo(net::Network, stim::Stimulus, speed::Int=5)
 """
-function Demo(net::LIFNetwork, speed::Int=5)
+function LiveDemo(net::LIFNetwork, speed::Int=5)
     h = default_figure()
-    return Demo(net, speed, h, h[:axes][1])
+    return LiveDemo(net, speed, h, h[:axes][1])
 end
 # ---------------------------------------------------------------------------- #
-function reset!(demo::Demo)
+function reset!(demo::LiveDemo)
     # if we always close the figure we avoid the "not responding to keypresses"
     # issue *AND* we get focus back on the figure when run() exits...
     close(demo.fig)
@@ -141,7 +143,7 @@ function build_demo{T<:Integer, F<:Real}(inp::Vector{Tuple{Pair{T,T}, F}})
     for x in inp
         connect!(net, Tuple(x[1]), (Synapses.Static, x[2], 2.0, 2.0))
     end
-    return Demo(net, 5)
+    return LiveDemo(net, 5)
 end
 """
     build_demo([1=>3, 2=>3])
@@ -162,7 +164,7 @@ mutable struct StimState <: Stimulus
     inc::Float64
 end
 # ---------------------------------------------------------------------------- #
-StimState(demo::Demo) = StimState(length(demo.net))
+StimState(demo::LiveDemo) = StimState(length(demo.net))
 StimState(n::Integer) = StimState(falses(n), ones(Float64, n), 0.1)
 StimState{T<:Real}(a::AbstractArray{T,1}) = StimState(falses(a), a, 0.1)
 # ============================================================================ #
@@ -183,11 +185,11 @@ function getstim(s::StimState, id::Integer, t::Time)
     end
 end
 # ============================================================================ #
-function run(demo::Demo, duration::Real=+Inf)
+function run(demo::LiveDemo, duration::Real=+Inf)
     return run(demo, StimState(length(demo.net)), duration)
 end
 # ---------------------------------------------------------------------------- #
-function run(demo::Demo, stimgen::Stimulus, duration::Real=+Inf)
+function run(demo::LiveDemo, stimgen::Stimulus, duration::Real=+Inf)
 
     const TMAX = 50.0 # max time of x axis in MS
 

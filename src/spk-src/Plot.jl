@@ -12,7 +12,7 @@ function plot_xcorr(t::AbstractVector, xc::Vector; bin_size=0.0005, tmax=0.015, 
     return h
 end
 # ---------------------------------------------------------------------------- #
-function plot_xcorr{T<:AbstractFloat}(ts1::Array{T}, ts2::Array{T};
+function plot_xcorr{T<:AbstractFloat}(ts1::Vector{T}, ts2::Vector{T};
             bin_size=0.0005, tmax=0.015, color="black", shift=0, tf=4.0,
             shift_color="cyan")
 
@@ -25,7 +25,7 @@ function plot_xcorr{T<:AbstractFloat}(ts1::Array{T}, ts2::Array{T};
     return h
 end
 # ---------------------------------------------------------------------------- #
-function plot_xcorr{T<:AbstractFloat}(ts1::Array{T}; bin_size=0.0005, tmax=0.015, color="black", shift::Int=0, tf=4.0)
+function plot_xcorr{T<:AbstractFloat}(ts1::Vector{T}; bin_size=0.0005, tmax=0.015, color="black", shift::Int=0, tf=4.0)
     xc, t = get_xcorr(ts1, bin_size, tmax)
     h = plot_xcorr(t, xc, bin_size=bin_size, tmax=tmax, color=color)
     if shift > 0

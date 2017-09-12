@@ -70,18 +70,18 @@ function reset!(demo::LiveDemo)
 end
 # ============================================================================ #
 """
-    build_demo([
+    build_network([
             (1=>3, .8),
             (2=>3, .6)
-        ])
+        ], xi=0.0)
 """
-function build_demo{T<:Integer, F<:Real}(inp::Vector{Tuple{Pair{T,T}, F}})
+function build_network{T<:Integer, F<:Real}(inp::Vector{Tuple{Pair{T,T}, F}}, xi::Real=0.0)
     ncell = 0
     for x in inp
         ncell = max(ncell, maximum(x[1]))
     end
 
-    net = LIFNetwork(ncell, 0.0)
+    net = LIFNetwork(ncell, xi)
 
     for x in net
         set!(x, :threshold, 1.8)
@@ -94,19 +94,30 @@ function build_demo{T<:Integer, F<:Real}(inp::Vector{Tuple{Pair{T,T}, F}})
     for x in inp
         connect!(net, Tuple(x[1]), (Synapses.Static, x[2], 2.0, 2.0))
     end
-    return LiveDemo(net, 10)
+
+    return net
+end
+# ============================================================================ #
+"""
+    build_demo([
+            (1=>3, .8),
+            (2=>3, .6)
+        ], xi=0.0)
+"""
+function build_demo{T<:Integer, F<:Real}(inp::Vector{Tuple{Pair{T,T}, F}}, xi::Real=0.0)
+    return LiveDemo(build_network(inp, xi), 10)
 end
 """
     build_demo([1=>3, 2=>3])
 """
-function build_demo{T<:Integer}(pairs::Vector{Pair{T,T}})
-    return build_demo([(x, 1.8) for x in pairs])
+function build_demo{T<:Integer}(pairs::Vector{Pair{T,T}}, xi::Real=0.0)
+    return build_demo([(x, 1.8) for x in pairs], xi)
 end
 """
     build_demo(2)
 """
-function build_demo(ncell::Integer)
-    return build_demo([(x=>ncell, 1.8) for x in 1:(ncell-1)])
+function build_demo(ncell::Integer, xi::Real=0.0)
+    return build_demo([(x=>ncell, 1.8) for x in 1:(ncell-1)], xi)
 end
 # ============================================================================ #
 mutable struct SquareWave <: Stimulus
@@ -153,17 +164,17 @@ function getstim(sw::SineWave, id::Integer, t::Time)
     return 0.0
 end
 # ============================================================================ #
-mutable struct StimState <: Stimulus
+mutable struct Keyboard <: Stimulus
     state::Vector{Bool}
     amp::Vector{Float64}
     inc::Float64
 end
 # ---------------------------------------------------------------------------- #
-StimState(demo::LiveDemo) = StimState(length(demo.net))
-StimState(n::Integer) = StimState(falses(n), ones(Float64, n), 0.1)
-StimState{T<:Real}(a::AbstractArray{T,1}) = StimState(falses(a), a, 0.1)
+Keyboard(demo::LiveDemo) = Keyboard(length(demo.net))
+Keyboard(n::Integer) = Keyboard(falses(n), ones(Float64, n), 0.1)
+Keyboard{T<:Real}(a::AbstractArray{T,1}) = Keyboard(falses(a), a, 0.1)
 # ============================================================================ #
-function keypressed(s::StimState, key::String)
+function keypressed(s::Keyboard, key::String)
     if key in ["1", "2", "3"]
         id = parse(Int8, key)
         if 0 < id <= length(s.state)
@@ -172,13 +183,13 @@ function keypressed(s::StimState, key::String)
     end
 end
 # ============================================================================ #
-function reset!(s::StimState)
+function reset!(s::Keyboard)
     for k in eachindex(s.state)
         s.state[k] = false
     end
 end
 # ============================================================================ #
-function getstim(s::StimState, id::Integer, t::Time)
+function getstim(s::Keyboard, id::Integer, t::Time)
     if 0 < id <= length(s.state)
         return s.state[id] ? s.amp[id] : 0.0
     else
@@ -187,7 +198,7 @@ function getstim(s::StimState, id::Integer, t::Time)
 end
 # ============================================================================ #
 function run(demo::LiveDemo, duration::Real=+Inf)
-    return run(demo, StimState(length(demo.net)), duration)
+    return run(demo, Keyboard(length(demo.net)), duration)
 end
 # ---------------------------------------------------------------------------- #
 function run(demo::LiveDemo, stimgen::Stimulus, duration::Real=+Inf)

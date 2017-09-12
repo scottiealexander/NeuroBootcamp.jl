@@ -1,9 +1,9 @@
 
 module NeuroBootcamp
 
-if !(@__DIR__ in LOAD_PATH)
-    push!(LOAD_PATH, @__DIR__)
-end
+# if !(@__DIR__() in LOAD_PATH)
+#     push!(LOAD_PATH, @__DIR__)
+# end
 
 using Networks, PyCall, LifConfig
 using Lif: set!
@@ -12,7 +12,9 @@ using Lif: set!
 
 using PyPlot, Plot
 
-export build_demo, run, LiveDemo
+import Base.run
+
+export build_demo, run_demo, LiveDemo
 
 abstract type Stimulus end
 # ============================================================================ #
@@ -42,61 +44,6 @@ function add!(x::ChunkArray, v::Float64)
         x.d[1:end-1] = x.d[2:end]
         x.d[end] = v
     end
-end
-# ============================================================================ #
-mutable struct StimGen <: Stimulus
-    output::Float64
-    interval::Vector{Float64}
-    amp::Float64
-    tlast::Float64
-    id::Vector{Int}
-    state::Int
-
-    function StimGen(interval::Vector{Float64}, amp::Float64, id::Vector{Int}=[1])
-        self = new()
-        self.output = 0.0
-        self.amp = amp
-        self.interval = interval
-        self.tlast = 0.0
-        self.id = id
-        self.state = 1
-
-        return self
-    end
-end
-# ---------------------------------------------------------------------------- #
-function generate!(s::StimGen, id::Int64, t::Float64)
-
-    out::Float64
-
-    if id in s.id
-
-        if (t >= (s.tlast + s.interval[s.state]))
-            s.tlast = t
-            s.output = abs(s.output - s.amp)
-            s.state = abs(s.state - 3)
-        end
-
-        out = s.output
-
-    else
-        out = 0.0
-    end
-
-    return out
-end
-# ---------------------------------------------------------------------------- #
-function generate2!(s::StimGen, id::Int64, t::Float64, f::Float64,
-    phase::Float64)
-    out::Float64
-
-    if id in s.id
-        out = 0.5*(sin(2.0*pi*(t*1e-3)*f+phase))+0.5
-    else
-        out = 0.0
-    end
-
-    return float(out > 0.5)
 end
 # ============================================================================ #
 mutable struct LiveDemo
@@ -147,7 +94,7 @@ function build_demo{T<:Integer, F<:Real}(inp::Vector{Tuple{Pair{T,T}, F}})
     for x in inp
         connect!(net, Tuple(x[1]), (Synapses.Static, x[2], 2.0, 2.0))
     end
-    return LiveDemo(net, 5)
+    return LiveDemo(net, 10)
 end
 """
     build_demo([1=>3, 2=>3])
@@ -160,6 +107,50 @@ end
 """
 function build_demo(ncell::Integer)
     return build_demo([(x=>ncell, 1.8) for x in 1:(ncell-1)])
+end
+# ============================================================================ #
+mutable struct SquareWave <: Stimulus
+    amp::Vector{Float64}
+    on::Float64
+    off::Float64
+    tlast::Float64
+    state::Bool
+end
+function SquareWave(demo::LiveDemo, amp::Float64=1.0, on::Float64=20.0, off::Float64=30.0)
+    return SquareWave([amp; zeros(Float64, length(demo.net)-1)], 20.0, 20.0, 0.0, false)
+end
+function reset!(sq::SquareWave)
+    sq.state = false
+    sq.tlast = 0.0
+end
+function getstim(sq::SquareWave, id::Integer, t::Time)
+    tnext = sq.tlast + (sq.state ? sq.on : sq.off)
+    if t >= tnext
+        sq.tlast = t
+        sq.state = !sq.state
+    end
+    if sq.state && (0 < id <= length(sq.amp))
+        return sq.amp[id]
+    else
+        return 0.0
+    end
+end
+# ============================================================================ #
+mutable struct SineWave <: Stimulus
+    amp::Vector{Float64}
+    freq::Vector{Float64}
+end
+function SineWave(demo::LiveDemo, amp::Float64=1.0, freq::Float64=25.0)
+    # frequency needs to be converted to cycles-per-ms for simulations
+    return SineWave([amp; zeros(Float64, length(demo.net)-1)],
+        fill(freq/1000.0, length(demo.net)))
+end
+reset!(sw::SineWave) = nothing
+function getstim(sw::SineWave, id::Integer, t::Time)
+    if 0 < id <= length(sw.amp)
+        return sw.amp[id] * ((0.5 * sin(2.0*pi*sw.freq[id]*t)) + 0.5)
+    end
+    return 0.0
 end
 # ============================================================================ #
 mutable struct StimState <: Stimulus
@@ -178,6 +169,12 @@ function keypressed(s::StimState, key::String)
         if 0 < id <= length(s.state)
             s.state[id] = !s.state[id]
         end
+    end
+end
+# ============================================================================ #
+function reset!(s::StimState)
+    for k in eachindex(s.state)
+        s.state[k] = false
     end
 end
 # ============================================================================ #
@@ -219,6 +216,7 @@ function run(demo::LiveDemo, stimgen::Stimulus, duration::Real=+Inf)
     stim = ChunkArray[ChunkArray(npt) for k in 1:ncell]
 
     reset!(demo)
+    reset!(stimgen)
 
     sca(demo.ax)
     xlim(0, TMAX)
@@ -275,7 +273,8 @@ function run(demo::LiveDemo, stimgen::Stimulus, duration::Real=+Inf)
     end
     # ------------------------------------------------------------------------ #
 
-    anim = animation.FuncAnimation(demo.fig, run_demo, frames=ncall, interval=10, repeat=repeat, blit=false)
+    anim = animation.FuncAnimation(demo.fig, run_demo, frames=ncall,
+        interval=10, repeat=repeat, blit=false)
 
     # ------------------------------------------------------------------------ #
     function key_press(event)

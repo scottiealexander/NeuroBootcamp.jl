@@ -4,7 +4,7 @@ using LifConfig, Networks
 
 export sine_stim, naka_rushton, run_sim_par, read_sim_file
 
-const default_dir = joinpath(splitdir(@__FILE__)[1], "data")
+const default_dir = joinpath(@__DIR__(), "data")
 
 # ============================================================================ #
 function sine_stim(id::Integer, t::Time, set::Vector{Int}=[], amp::Float64=.05, f::Float64=4.0)

@@ -14,7 +14,7 @@ using PyPlot, Plot
 
 import Base.run
 
-export build_demo, run_demo, LiveDemo
+export build_demo, build_network, run_demo, SquareWave, SineWave
 
 abstract type Stimulus end
 # ============================================================================ #

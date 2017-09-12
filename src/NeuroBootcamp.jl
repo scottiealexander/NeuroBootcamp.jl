@@ -107,7 +107,7 @@ end
         ], xi=0.0)
 """
 function build_demo{T<:Integer, F<:Real}(inp::Vector{Tuple{Pair{T,T}, F}}, xi::Real=0.0)
-    return LiveDemo(build_network(inp, xi), 10)
+    return LiveDemo(build_network(inp, xi), 5)
 end
 """
     build_demo([1=>3, 2=>3])

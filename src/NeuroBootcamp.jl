@@ -148,7 +148,6 @@ function getstim(sq::SquareWave, id::Integer, t::Time)
         return 0.0
     end
 end
-keypressed(sq::SquareWave, key::String) = nothing
 # ============================================================================ #
 mutable struct SineWave <: Stimulus
     amp::Vector{Float64}
@@ -166,7 +165,6 @@ function getstim(sw::SineWave, id::Integer, t::Time)
     end
     return 0.0
 end
-keypressed(sw::SineWave, key::String) = nothing
 # ============================================================================ #
 mutable struct Keyboard <: Stimulus
     state::Vector{Bool}
@@ -200,6 +198,8 @@ function getstim(s::Keyboard, id::Integer, t::Time)
         return 0.0
     end
 end
+# ============================================================================ #
+keypressed(s::Stimulus, key::String) = nothing
 # ============================================================================ #
 function run(demo::LiveDemo, duration::Real=+Inf)
     return run(demo, Keyboard(length(demo.net)), duration)

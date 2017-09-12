@@ -57,7 +57,9 @@ end
 """
 function LiveDemo(net::LIFNetwork, speed::Int=5)
     h = default_figure()
-    return LiveDemo(net, speed, h, h[:axes][1])
+    demo = LiveDemo(net, speed, h, h[:axes][1])
+    close(h)
+    return demo
 end
 # ---------------------------------------------------------------------------- #
 function reset!(demo::LiveDemo)
@@ -146,6 +148,7 @@ function getstim(sq::SquareWave, id::Integer, t::Time)
         return 0.0
     end
 end
+keypressed(sq::SquareWave, key::String) = nothing
 # ============================================================================ #
 mutable struct SineWave <: Stimulus
     amp::Vector{Float64}
@@ -163,6 +166,7 @@ function getstim(sw::SineWave, id::Integer, t::Time)
     end
     return 0.0
 end
+keypressed(sw::SineWave, key::String) = nothing
 # ============================================================================ #
 mutable struct Keyboard <: Stimulus
     state::Vector{Bool}

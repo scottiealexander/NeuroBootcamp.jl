@@ -168,7 +168,7 @@ end
 function receive!(post::N, s::T, dt::Time, tnow::Time) where {T<:BaseSynapse, N<:BaseNeuron}
     #receive 'input' from the current state of the synapse
     if !isempty(s.queue) && (tnow >= s.queue[1])
-        s.onset = shift!(s.queue)
+        s.onset = popfirst!(s.queue)
         spike = true
     else
         spike = false

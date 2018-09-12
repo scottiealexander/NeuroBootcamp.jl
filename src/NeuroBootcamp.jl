@@ -1,16 +1,29 @@
 
 module NeuroBootcamp
 
+# for file in ["LifConfig.jl", "Lif.jl", "Networks.jl"]
+#     if endswith(file, ".jl")
+#         println(file)
+#         include(file)
+#     end
+# end
+
 if !(@__DIR__() in LOAD_PATH)
-    push!(LOAD_PATH, @__DIR__)
+    push!(LOAD_PATH, @__DIR__())
 end
 
-using Networks, PyCall, LifConfig
-using Lif: set!
+using Networks
+using LifConfig
+using Lif
 
-@pyimport matplotlib.animation as animation
+using PyCall
+const animation = PyNULL()
+function __init__()
+    copy!(animation, pyimport("matplotlib.animation"))
+end
 
-using PyPlot, Plot
+using PyPlot
+using Plot
 
 import Base.run
 
@@ -77,7 +90,7 @@ end
             (2=>3, .6)
         ], xi=0.0)
 """
-function build_network{T<:Integer, F<:Real}(inp::Vector{Tuple{Pair{T,T}, F}}, xi::Real=0.0)
+function build_network(inp::Vector{Tuple{Pair{T,T}, F}}, xi::Real=0.0) where {T<:Integer, F<:Real}
     ncell = 0
     for x in inp
         ncell = max(ncell, maximum(x[1]))
@@ -86,10 +99,10 @@ function build_network{T<:Integer, F<:Real}(inp::Vector{Tuple{Pair{T,T}, F}}, xi
     net = LIFNetwork(ncell, xi)
 
     for x in net
-        set!(x, :threshold, 1.8)
-        set!(x, :rm, 3.5)
-        set!(x, :tau, 4.5)
-        set!(x, :vspike, 4.0)
+        Lif.set!(x, :threshold, 1.8)
+        Lif.set!(x, :rm, 3.5)
+        Lif.set!(x, :tau, 4.5)
+        Lif.set!(x, :vspike, 4.0)
     end
 
     connect!(net)
@@ -106,13 +119,13 @@ end
             (2=>3, .6)
         ], xi=0.0)
 """
-function build_demo{T<:Integer, F<:Real}(inp::Vector{Tuple{Pair{T,T}, F}}, xi::Real=0.0)
+function build_demo(inp::Vector{Tuple{Pair{T,T}, F}}, xi::Real=0.0) where {T<:Integer, F<:Real}
     return LiveDemo(build_network(inp, xi), 7)
 end
 """
     build_demo([1=>3, 2=>3])
 """
-function build_demo{T<:Integer}(pairs::Vector{Pair{T,T}}, xi::Real=0.0)
+function build_demo(pairs::Vector{Pair{T,T}}, xi::Real=0.0) where {T<:Integer}
     return build_demo([(x, 1.8) for x in pairs], xi)
 end
 """
@@ -174,7 +187,7 @@ end
 # ---------------------------------------------------------------------------- #
 Keyboard(demo::LiveDemo) = Keyboard(length(demo.net))
 Keyboard(n::Integer) = Keyboard(falses(n), ones(Float64, n), 0.1)
-Keyboard{T<:Real}(a::AbstractArray{T,1}) = Keyboard(falses(a), a, 0.1)
+Keyboard(a::AbstractArray{T,1}) where {T<:Real} = Keyboard(falses(a), a, 0.1)
 # ============================================================================ #
 function keypressed(s::Keyboard, key::String)
     if key in ["1", "2", "3"]
@@ -207,13 +220,13 @@ end
 # ---------------------------------------------------------------------------- #
 function run(demo::LiveDemo, stimgen::Stimulus, duration::Real=+Inf)
 
-    const TMAX = 50.0 # max time of x axis in MS
+    TMAX = 50.0 # max time of x axis in MS
 
-    const dt = 0.05 # timestep in MS
+    dt = 0.05 # timestep in MS
 
-    const npt = round(Int64, TMAX / dt)
+    npt = round(Int64, TMAX / dt)
 
-    const ncell = length(demo.net)
+    ncell = length(demo.net)
 
     if isinf(duration)
         ncall = round(Int64, 200.0 / (dt * demo.speed))
@@ -248,8 +261,8 @@ function run(demo::LiveDemo, stimgen::Stimulus, duration::Real=+Inf)
         error("Not enough colors!")
     end
 
-    data_line = Vector{PyCall.PyObject}(ncell)
-    stim_line = Vector{PyCall.PyObject}(ncell)
+    data_line = Vector{PyCall.PyObject}(undef, ncell)
+    stim_line = Vector{PyCall.PyObject}(undef, ncell)
     for k = 1:ncell
         data_line[k] = plot([], [], color=col[k], linewidth=3)[1]
         stim_line[k] = plot([], [], color=col[k], linewidth=3)[1]
@@ -288,7 +301,7 @@ function run(demo::LiveDemo, stimgen::Stimulus, duration::Real=+Inf)
     end
     # ------------------------------------------------------------------------ #
 
-    anim = animation.FuncAnimation(demo.fig, run_demo, frames=ncall,
+    anim = animation[:FuncAnimation](demo.fig, run_demo, frames=ncall,
         interval=10, repeat=repeat, blit=false)
 
     # ------------------------------------------------------------------------ #

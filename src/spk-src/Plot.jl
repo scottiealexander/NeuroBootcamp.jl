@@ -12,9 +12,9 @@ function plot_xcorr(t::AbstractVector, xc::Vector; bin_size=0.0005, tmax=0.015, 
     return h
 end
 # ---------------------------------------------------------------------------- #
-function plot_xcorr{T<:AbstractFloat}(ts1::Vector{T}, ts2::Vector{T};
+function plot_xcorr(ts1::Vector{T}, ts2::Vector{T};
             bin_size=0.0005, tmax=0.015, color="black", shift=0, tf=4.0,
-            shift_color="cyan")
+            shift_color="cyan") where {T<:AbstractFloat}
 
     xc, t = get_xcorr(ts1, ts2, bin_size, tmax)
     h = plot_xcorr(t, xc, bin_size=bin_size, tmax=tmax, color=color)
@@ -25,7 +25,9 @@ function plot_xcorr{T<:AbstractFloat}(ts1::Vector{T}, ts2::Vector{T};
     return h
 end
 # ---------------------------------------------------------------------------- #
-function plot_xcorr{T<:AbstractFloat}(ts1::Vector{T}; bin_size=0.0005, tmax=0.015, color="black", shift::Int=0, tf=4.0)
+function plot_xcorr(ts1::Vector{T}; bin_size=0.0005, tmax=0.015, color="black",
+    shift::Int=0, tf=4.0) where {T<:AbstractFloat}
+
     xc, t = get_xcorr(ts1, bin_size, tmax)
     h = plot_xcorr(t, xc, bin_size=bin_size, tmax=tmax, color=color)
     if shift > 0
@@ -35,8 +37,10 @@ function plot_xcorr{T<:AbstractFloat}(ts1::Vector{T}; bin_size=0.0005, tmax=0.01
     return h
 end
 # ============================================================================ #
-function plot_raster{T<:AbstractFloat}(ts::Vector{T}, evt::AbstractArray{T,1}, dur::AbstractFloat, color::String="blue")
-    const bin_size = 0.001
+function plot_raster(ts::Vector{T}, evt::AbstractArray{T,1}, dur::AbstractFloat,
+    color::String="blue") where {T<:AbstractFloat}
+
+    bin_size = 0.001
     nbin = floor(Int, dur / bin_size)
     p = psth(ts, collect(evt), 0:nbin, bin_size)[1];
     h = default_figure()
@@ -49,11 +53,10 @@ function plot_raster{T<:AbstractFloat}(ts::Vector{T}, evt::AbstractArray{T,1}, d
    return h
 end
 # ============================================================================ #
-function plot_cycle_mean{T<:AbstractFloat}(ts::Vector{T},
-    evt::AbstractArray{T,1}, dur::AbstractFloat, tf::AbstractFloat,
-    color::String="blue")
+function plot_cycle_mean(ts::Vector{T}, evt::AbstractArray{T,1},
+    dur::AbstractFloat, tf::AbstractFloat, color::String="blue") where {T<:AbstractFloat}
 
-    const bin_size = 0.001
+    bin_size = 0.001
     nbin = floor(Int, dur / bin_size)
     bpc = floor(Int, 1/(tf * bin_size))
     p = psth(ts, collect(evt), 0:nbin, bin_size)[1];

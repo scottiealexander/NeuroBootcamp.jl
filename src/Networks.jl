@@ -1,10 +1,8 @@
 module Networks
 
-using Lif, Synapses, LifConfig
+using Printf, Lif, Synapses, LifConfig
 
-import Base: show, length, getindex, start, next, done
-
-export LIFNetwork, simulate, reset!, connect!, start, next, done
+export LIFNetwork, simulate, reset!, connect!
 
 # by exporting the Synapses module, where 'using' is used to import
 # this module, Synapses will be imported as if 'import' had been used
@@ -20,18 +18,18 @@ mutable struct LIFNetwork{S<:BaseSynapse, N<:BaseNeuron} <: NeuralNetwork
     synapses::Array{S,2}
 end
 # ---------------------------------------------------------------------------- #
-function LIFNetwork{T<:BaseNeuron}(x::Array{T,1})
+function LIFNetwork(x::Array{T,1}) where {T<:BaseNeuron}
     n = length(x)
     LIFNetwork(x, Array{BaseSynapse,2}(n, n))
 end
 # ---------------------------------------------------------------------------- #
-function LIFNetwork{T<:BaseNeuron}(n::Integer, xi::Float64=0.2, typ::Type{T}=LIFNeuron)
-    x = Array{T,1}(n)
+function LIFNetwork(n::Integer, xi::Float64=0.2, typ::Type{T}=LIFNeuron) where {T<:BaseNeuron}
+    x = Array{T,1}(undef, n)
     for k in eachindex(x)
         x[k] = typ()
-        set!(x[k], :xi, xi)
+        Lif.set!(x[k], :xi, xi)
     end
-    LIFNetwork(x, Array{BaseSynapse,2}(n, n))
+    LIFNetwork(x, Array{BaseSynapse,2}(undef, n, n))
 end
 # ---------------------------------------------------------------------------- #
 function connect!(net::LIFNetwork)
@@ -62,15 +60,24 @@ function connect!(net::LIFNetwork, k::Tuple{Integer, Integer}, p::Tuple)
     net.synapses[k...] = Synapse(p...)
 end
 # ---------------------------------------------------------------------------- #
-length(net::LIFNetwork) = length(net.neurons)
-start(net::LIFNetwork) = 1
-next(net::LIFNetwork, state) = net[state], state+1
-done(net::LIFNetwork, state) = state > length(net)
-getindex(net::LIFNetwork, k::Integer) = net.neurons[k]
-getindex(net::LIFNetwork, k::UnitRange) = net.neurons[k]
-getindex(net::LIFNetwork, k::AbstractArray) = net.neurons[k]
+Base.iterate(net::LIFNetwork) = (net[1], 1)
+function Base.iterate(net::LIFNetwork, state::Integer)
+    if state <= length(net)
+        return (net[state], state+1)
+    else
+        return nothing
+    end
+end
+Base.IteratorSize(net::LIFNetwork) = HasLength()
+Base.IteratorEltype(net::LIFNetwork) = HasEltype()
+Base.eltype(net::LIFNetwork) = eltype(net.neurons)
+Base.length(net::LIFNetwork) = length(net.neurons)
+
+Base.getindex(net::LIFNetwork, k::Integer) = net.neurons[k]
+Base.getindex(net::LIFNetwork, k::UnitRange) = net.neurons[k]
+Base.getindex(net::LIFNetwork, k::AbstractArray) = net.neurons[k]
 # ---------------------------------------------------------------------------- #
-function show(io::IO, net::LIFNetwork)
+function Base.show(io::IO, net::LIFNetwork)
     str = @sprintf("%dx1 Array{LIFNeuron,1}:\n", length(net.neurons))
     print(io, str)
     print(io, net.neurons)
@@ -139,8 +146,8 @@ function default_stim(id::Integer, t::Time)
     return 0.0
 end
 # ============================================================================ #
-function simulate{T<:NeuralNetwork}(net::T, fstim::Function,
-    duration::Real=500.0, record::Vector{Int64}=Int64[])
+function simulate(net::T, fstim::Function, duration::Real=500.0,
+    record::Vector{Int64}=Int64[]) where {T<:NeuralNetwork}
 
     tnow = 0.0
     dt = 0.043
@@ -185,7 +192,7 @@ end
 #
 #     net = LIFNetwork(n,xi)
 #     for x in net
-#         set!(x, :xi, 0.0)
+#         Lif.set!(x, :xi, 0.0)
 #     end
 #     connect!(net, (1,2)=>(Synapses.Static, .54, 3.0, 2.0))
 #     stim(id, t) = t > 100.0 && id == 1 ? 0.2 : 0.0

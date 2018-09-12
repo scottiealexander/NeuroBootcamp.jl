@@ -22,9 +22,9 @@ function plot_with_error(x::AbstractArray, y::Vector, yerr::Vector,
     ax[:plot](x, y, "-", color=col_array, linewidth=linewidth, args...)
 end
 # ---------------------------------------------------------------------------- #
-function shading_color{T<:Number}(col::Vector{T})
-    const ferr = 8.0
-    const fedge = 0.25
+function shading_color(col::Vector{T}) where {T<:Number}
+    ferr = 8.0
+    fedge = 0.25
     orig = convert(HSV, RGB(col...))
     hsv = HSV(orig.h, orig.s/ferr, 1.0 - (abs(1.0 - orig.s)^ferr/ferr))
     col_err = hsv2rgb(hsv)
@@ -32,7 +32,7 @@ function shading_color{T<:Number}(col::Vector{T})
     return col_err, col_edge
 end
 # ---------------------------------------------------------------------------- #
-function hsv2rgb{T<:Number}(x::ColorTypes.HSV{T})
+function hsv2rgb(x::ColorTypes.HSV{T}) where {T<:Number}
     # xv = HSV(min([x.h, x.s, x.v], T(1.0))...)
     rgb = convert(RGB, x)
     return T[rgb.r, rgb.g, rgb.b]
@@ -122,7 +122,7 @@ end
 # ============================================================================ #
 function default_axes(ax=nothing)
     if ax == nothing
-        ax = axes()
+        ax = PyPlot.axes()
     end
     #set ticks to face out
     ax[:tick_params](direction="out", length=8.0, width=4.0)

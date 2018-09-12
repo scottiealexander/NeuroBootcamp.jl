@@ -84,13 +84,13 @@ end
 # ============================================================================ #
 rmzeros(x::Vector{Int64}) = x[x .> 0]
 # ============================================================================ #
-function segment{L}(ts::Vector{Float64}, evt::Vector{Float64}, label::Vector{L},
-    dur::Float64, bin_size::Float64)
+function segment(ts::Vector{Float64}, evt::Vector{Float64}, label::Vector{L},
+    dur::Float64, bin_size::Float64) where L
     return segment(ts, evt, label, 0.0, dur, bin_size)
 end
 # ---------------------------------------------------------------------------- #
-function segment{L}(ts::Vector{Float64}, evt::Vector{Float64}, label::Vector{L},
-    pre::Float64, post::Float64, bin_size::Float64)
+function segment(ts::Vector{Float64}, evt::Vector{Float64}, label::Vector{L},
+    pre::Float64, post::Float64, bin_size::Float64) where L
 
     if length(label) != length(evt)
         error("Length of event label and event timestamp vectors must be equal")

@@ -3,22 +3,22 @@
 
 export f1xfm, cycle_mean
 # ============================================================================ #
-@inline calcf1{C<:Complex, T<:Number}(cs::Vector{C}, d::Matrix{T}) =
+@inline calcf1(cs::Vector{C}, d::Matrix{T}) where {C<:Complex, T<:Number} =
     abs(vec(cs' * d))
 # ---------------------------------------------------------------------------- #
-@inline calcf1{C<:Complex, T<:Number}(cs::Vector{C}, d::Vector{T}) =
+@inline calcf1(cs::Vector{C}, d::Vector{T}) where {C<:Complex, T<:Number} =
     abs(dot(cs, d))
 # ---------------------------------------------------------------------------- #
 @inline f1basis(npt::Int) = exp(-im*2.0*pi*linspace(0.0, 1.0, npt))
 # ============================================================================ #
-function f1xfm{T<:Number}(d::Array{T}, f1::AbstractFloat, dur::AbstractFloat)
+function f1xfm(d::Array{T}, f1::AbstractFloat, dur::AbstractFloat) where {T<:Number}
     bpc = floor(Int, size(d, 1) / (dur * f1))
     tmp = cycle_mean(d, bpc)
     return calcf1(f1basis(bpc), tmp) * (2.0 / bpc)
 end
 # ============================================================================ #
-function f1xfm{T<:Number}(d::Vector{Matrix{T}}, f1::AbstractFloat,
-    dur::AbstractFloat)
+function f1xfm(d::Vector{Matrix{T}}, f1::AbstractFloat,
+    dur::AbstractFloat) where {T<:Number}
 
     siz = size(d[1], 1)
     check_size(x::Matrix{T}) = size(x, 1) == siz
@@ -44,8 +44,8 @@ function f1xfm{T<:Number}(d::Vector{Matrix{T}}, f1::AbstractFloat,
     return out
 end
 # ============================================================================ #
-function f1xfm{T<:Number, F<:AbstractFloat}(d::Vector{Matrix{T}}, f1::Vector{F},
-    dur::AbstractFloat)
+function f1xfm(d::Vector{Matrix{T}}, f1::Vector{F},
+    dur::AbstractFloat) where {T<:Number, F<:AbstractFloat}
 
     length(f1) != length(d) && error("Number of temporal frequencies and number of trial groups *MUST* match")
 
@@ -69,13 +69,13 @@ function cycle_pad(npt::Int, bpc::Integer)
     return npad, ncycle
 end
 # ---------------------------------------------------------------------------- #
-function cycle_mean{T<:Number}(d::Vector{T}, bpc::Integer)
+function cycle_mean(d::Vector{T}, bpc::Integer) where {T<:Number}
     pad, ncycle = cycle_pad(length(d), bpc)
     den = [fill(ncycle, bpc-pad); fill(ncycle-1, pad)]
     return vec(sum(reshape(cat(1, d, zeros(T, pad)), bpc, ncycle), 2)) ./ den
 end
 # ---------------------------------------------------------------------------- #
-function cycle_mean{T<:Number}(d::Matrix{T}, bpc::Integer)
+function cycle_mean(d::Matrix{T}, bpc::Integer) where {T<:Number}
     pad, ncycle = cycle_pad(size(d, 1), bpc)
     ntrial = size(d, 2)
 

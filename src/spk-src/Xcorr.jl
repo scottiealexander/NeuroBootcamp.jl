@@ -2,8 +2,8 @@
 export get_xcorr, get_shift, xpsd
 
 # ============================================================================ #
-function get_xcorr{T<:AbstractFloat}(ts1::Vector{T}, ts2::Vector{T},
-    bs::AbstractFloat, tm::AbstractFloat)
+function get_xcorr(ts1::Vector{T}, ts2::Vector{T},
+    bs::AbstractFloat, tm::AbstractFloat) where {T<:AbstractFloat}
 
     nbin = round(Int64, tm/bs)
     bins = -nbin:nbin
@@ -15,8 +15,8 @@ function get_xcorr{T<:AbstractFloat}(ts1::Vector{T}, ts2::Vector{T},
     return xc, t
 end
 # ============================================================================ #
-function get_xcorr{T<:AbstractFloat}(ts::Vector{T}, bs::AbstractFloat,
-    tm::AbstractFloat)
+function get_xcorr(ts::Vector{T}, bs::AbstractFloat,
+    tm::AbstractFloat) where {T<:AbstractFloat}
 
     xc, t = get_xcorr(ts, ts, bs, tm)
     kc = floor(Int, length(xc) / 2) + 1
@@ -25,8 +25,8 @@ function get_xcorr{T<:AbstractFloat}(ts::Vector{T}, bs::AbstractFloat,
     return xc, t
 end
 # ============================================================================ #
-function get_shift{T<:AbstractFloat}(ts1::Vector{T}, ts2::Vector{T},
-    bs::AbstractFloat, tm::AbstractFloat, nshift::Integer, tf::AbstractFloat)
+function get_shift(ts1::Vector{T}, ts2::Vector{T}, bs::AbstractFloat,
+    tm::AbstractFloat, nshift::Integer, tf::AbstractFloat) where {T<:AbstractFloat}
 
     len = round(Int64, (tm*2.0)/bs + 1)
     sp = zeros(len,)
@@ -36,8 +36,8 @@ function get_shift{T<:AbstractFloat}(ts1::Vector{T}, ts2::Vector{T},
     return sp ./ Float64(nshift)
 end
 # ============================================================================ #
-function xpsd{T<:AbstractFloat}(ts1::Vector{T}, ts2::Vector{T},
-    bin_size::AbstractFloat, tmax::AbstractFloat, fmax::AbstractFloat)
+function xpsd(ts1::Vector{T}, ts2::Vector{T}, bin_size::AbstractFloat,
+    tmax::AbstractFloat, fmax::AbstractFloat) where {T<:AbstractFloat}
 
     p, f = xpsd(ts1, ts2, bin_size, tmax)
     b = f .<= fmax
@@ -45,8 +45,8 @@ function xpsd{T<:AbstractFloat}(ts1::Vector{T}, ts2::Vector{T},
     return p[b], f[b]
 end
 # ---------------------------------------------------------------------------- #
-function xpsd{T<:AbstractFloat}(ts1::Vector{T}, ts2::Vector{T},
-    bin_size::AbstractFloat, tmax::AbstractFloat)
+function xpsd(ts1::Vector{T}, ts2::Vector{T}, bin_size::AbstractFloat,
+    tmax::AbstractFloat) where {T<:AbstractFloat}
 
     xc, t = get_xcorr(ts1, ts2, bin_size, tmax)
     npt = nextpow(2, length(xc))

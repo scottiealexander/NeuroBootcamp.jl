@@ -12,11 +12,11 @@ abstract type BaseSynapse end
 abstract type DynamicSynapse <: BaseSynapse end
 
 # =========================================================================== #
-macro pcheck(var)
-    quote
-        @assert(!isnan($var) && !isinf($var))
-    end
-end
+# macro pcheck(var)
+#     quote
+#         @assert(!isnan($var) && !isinf($var))
+#     end
+# end
 # =========================================================================== #
 # enumeration of concrete synpase types
 # =========================================================================== #
@@ -32,7 +32,7 @@ mutable struct SynapseParameters
 end
 SynapseParameters(weight, delay, tau) = SynapseParameters(weight, delay, tau, Dict{Symbol, Any}())
 # --------------------------------------------------------------------------- #
-getindex(s::SynapseParameters, k::Symbol) = (return s.aux[k])
+getindex(s::SynapseParameters, k::Symbol) = return s.aux[k]
 # --------------------------------------------------------------------------- #
 setindex!(s::SynapseParameters, x::Any, k::Symbol) = (s.aux[k] = x)
 # --------------------------------------------------------------------------- #
@@ -51,7 +51,7 @@ end
 # =========================================================================== #
 # interal synapse factory function
 # =========================================================================== #
-function build_synapse!{T<:BaseSynapse}(s::T, weight, delay, tau; args...)
+function build_synapse!(s::T, weight, delay, tau; args...) where T<:BaseSynapse
     s.weight = weight
     s.queue = Array{Float,1}()
     s.onset = 0.0 #+Inf
@@ -158,14 +158,14 @@ TsodyksSynapse() = TsodyksSynapse(0.0, +Inf, 0.0, 0.0, 0.0, 0.0)
 # =========================================================================== #
 # BaseSynapse methods
 # =========================================================================== #
-function send!{T<:BaseSynapse, N<:BaseNeuron}(pre::N, s::T, spk::Bool, tnow::Time)
+function send!(pre::N, s::T, spk::Bool, tnow::Time) where {T<:BaseSynapse, N<:BaseNeuron}
     if spk
         #send a spike to the synapse
         push!(s.queue, tnow + s.p.delay)
     end
 end
 # --------------------------------------------------------------------------- #
-function receive!{T<:BaseSynapse, N<:BaseNeuron}(post::N, s::T, dt::Time, tnow::Time)
+function receive!(post::N, s::T, dt::Time, tnow::Time) where {T<:BaseSynapse, N<:BaseNeuron}
     #receive 'input' from the current state of the synapse
     if !isempty(s.queue) && (tnow >= s.queue[1])
         s.onset = shift!(s.queue)
@@ -203,17 +203,17 @@ function receive!{T<:BaseSynapse, N<:BaseNeuron}(post::N, s::T, dt::Time, tnow::
     return out
 end
 # --------------------------------------------------------------------------- #
-function reset!{T<:BaseSynapse}(s::T)
+function reset!(s::T) where {T<:BaseSynapse}
     s.onset = 0.0
     s.queue = Array{Float,1}()
     s.weight = s.p.weight
 end
 # --------------------------------------------------------------------------- #
-function update!{T<:BaseSynapse}(s::T, dt::Time, spike::Bool, tnow::Time)
+function update!(s::T, dt::Time, spike::Bool, tnow::Time) where {T<:BaseSynapse}
     #nothing to do, synaptic weight is static
 end
 # --------------------------------------------------------------------------- #
-function isconnected{T<:BaseSynapse}(s::T)
+function isconnected(s::T) where {T<:BaseSynapse}
     if s.p.weight == 0.0 || isinf(s.p.delay)
         b = false
     else
@@ -222,7 +222,7 @@ function isconnected{T<:BaseSynapse}(s::T)
     return b
 end
 # --------------------------------------------------------------------------- #
-function show{T<:BaseSynapse}(io::IO, s::T)
+function show(io::IO, s::T) where {T<:BaseSynapse}
     #TODO, FIXME: this formatting is quite poor...
     show(io, s.p.weight)
 end
@@ -342,12 +342,12 @@ end
 # =========================================================================== #
 # DCSynapse methods
 # =========================================================================== #
-function send!{N<:BaseNeuron}(pre::N, s::DCSynapse, spk::Bool, tnow::Time)
+function send!(pre::N, s::DCSynapse, spk::Bool, tnow::Time) where {N<:BaseNeuron}
     push!(s.queue, pre.vm)
     s.onset = tnow #NOTE: this is not needed...
 end
 # --------------------------------------------------------------------------- #
-function receive!{N<:BaseNeuron}(post::N, s::DCSynapse, dt::Time, tnow::Time)
+function receive!(post::N, s::DCSynapse, dt::Time, tnow::Time) where {N<:BaseNeuron}
 
     if length(s.queue) < floor(s.p.delay/dt) || tnow < dt #floor(1.0/dt)
         out = 0.0
@@ -364,9 +364,9 @@ function test2(dt=0.05)
 
     pre = LIFNeuron()
     post = LIFNeuron()
-    set!(pre, :xi, 0.0)
-    set!(post, :xi, 0.0)
-    set!(post, :tau, 10.0)
+    Lif.set!(pre, :xi, 0.0)
+    Lif.set!(post, :xi, 0.0)
+    Lif.set!(post, :tau, 10.0)
 
     #                    wi   delay tau   U   taud  tauf
     s = Synapse(Tsodyks, 0.05, 3.0, 3.0, 0.4, 100.0, 10.0)
@@ -416,10 +416,10 @@ function test(dt=0.043)
 
     #2 noise-less neurons
     pre = LIFNeuron()
-    set!(pre, :xi, 0.0)
+    Lif.set!(pre, :xi, 0.0)
     # pre.p.tau = 1.0
     post = LIFNeuron()
-    set!(post, :xi, 0.0)
+    Lif.set!(post, :xi, 0.0)
 
     # s = DCSynapse(1.0, 0.1)
     # s = Synapse(.38, 3.0, 2.0, 0.4, 60)

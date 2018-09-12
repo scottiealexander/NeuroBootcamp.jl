@@ -5,7 +5,7 @@ module Histogram
 
 export hist, hist!
 
-function histrange{T<:AbstractFloat,N}(v::AbstractArray{T,N}, n::Integer)
+function histrange(v::AbstractArray{T,N}, n::Integer) where {T<:AbstractFloat,N}
     nv = length(v)
     if nv == 0 && n < 0
         throw(ArgumentError("number of bins must be ≥ 0 for an empty array, got $n"))
@@ -35,7 +35,7 @@ function histrange{T<:AbstractFloat,N}(v::AbstractArray{T,N}, n::Integer)
     return start:step:(start + nm1*step)
 end
 
-function histrange{T<:Integer,N}(v::AbstractArray{T,N}, n::Integer)
+function histrange(v::AbstractArray{T,N}, n::Integer) where {T<:Integer,N}
     nv = length(v)
     if nv == 0 && n < 0
         throw(ArgumentError("number of bins must be ≥ 0 for an empty array, got $n"))
@@ -76,7 +76,7 @@ function sturges(n::Integer)
     return ceil(Int, log2(n)) + 1
 end
 
-function hist!{HT}(h::AbstractArray{HT}, v::AbstractVector, edg::AbstractVector)
+function hist!(h::AbstractArray{HT}, v::AbstractVector, edg::AbstractVector) where {HT}
     n = length(edg) - 1
     length(h) == n || throw(DimensionMismatch("length(histogram) must equal length(edges) - 1"))
     fill!(h, zero(HT))

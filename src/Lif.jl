@@ -1,7 +1,7 @@
 module Lif
 
 export BaseNeuron, LIFNeuron, TSNeuron,
-       set!, show, reset!, step! #is_refractory, is_spiking
+       show, reset!, step! #is_refractory, is_spiking
 
 using LifConfig
 
@@ -52,9 +52,9 @@ mutable struct LIFNeuron <: BaseNeuron
 end
 # ---------------------------------------------------------------------------- #
 function set!(x::LIFNeuron, f::Symbol, v::Float)
-    if f in fieldnames(x)
+    if f in fieldnames(typeof(x))
         setfield!(x, f, v)
-    elseif f in fieldnames(x.p)
+    elseif f in fieldnames(typeof(x.p))
         setfield!(x.p, f, v)
     else
         warn("Failed to set field '" * string(f) * "': field not found")

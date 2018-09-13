@@ -1,6 +1,9 @@
 module Networks
 
-using Printf, Lif, Synapses, LifConfig
+using Printf, ..Lif, ..LifConfig
+
+include("./Synapses.jl")
+using .Synapses
 
 export LIFNetwork, simulate, reset!, connect!
 

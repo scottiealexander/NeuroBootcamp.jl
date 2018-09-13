@@ -1,6 +1,6 @@
 module Synapses
 
-using Lif, LifConfig
+using ..Lif, ..LifConfig
 
 export BaseSynapse, Synapse, PlasticSynapse, update!, send!, receive!, reset!, show, isconnected
 

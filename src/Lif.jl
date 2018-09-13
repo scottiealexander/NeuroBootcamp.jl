@@ -3,7 +3,7 @@ module Lif
 export BaseNeuron, LIFNeuron, TSNeuron,
        show, reset!, step! #is_refractory, is_spiking
 
-using LifConfig
+using ..LifConfig
 
 import Base: show
 

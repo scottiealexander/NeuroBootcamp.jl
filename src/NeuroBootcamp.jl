@@ -1,20 +1,14 @@
 
 module NeuroBootcamp
 
-# for file in ["LifConfig.jl", "Lif.jl", "Networks.jl"]
-#     if endswith(file, ".jl")
-#         println(file)
-#         include(file)
-#     end
-# end
+include("./LifConfig.jl")
+using .LifConfig
 
-if !(@__DIR__() in LOAD_PATH)
-    push!(LOAD_PATH, @__DIR__())
-end
+include("./Lif.jl")
+using .Lif
 
-using Networks
-using LifConfig
-using Lif
+include("./Networks.jl")
+using .Networks
 
 using PyCall
 const animation = PyNULL()
@@ -22,12 +16,11 @@ function __init__()
     copy!(animation, pyimport("matplotlib.animation"))
 end
 
-using PyPlot
-using Plot
+using PyPlot, SpkPlot
 
 import Base.run
 
-export build_demo, build_network, run_demo, SquareWave, SineWave
+export build_demo, build_network, SquareWave, SineWave, run_sim
 
 abstract type Stimulus end
 # ============================================================================ #
@@ -120,7 +113,7 @@ end
         ], xi=0.0)
 """
 function build_demo(inp::Vector{Tuple{Pair{T,T}, F}}, xi::Real=0.0) where {T<:Integer, F<:Real}
-    return LiveDemo(build_network(inp, xi), 7)
+    return LiveDemo(build_network(inp, xi), 5)
 end
 """
     build_demo([1=>3, 2=>3])
@@ -129,7 +122,7 @@ function build_demo(pairs::Vector{Pair{T,T}}, xi::Real=0.0) where {T<:Integer}
     return build_demo([(x, 1.8) for x in pairs], xi)
 end
 """
-    build_demo(2)
+    build_demo(2, xi=0.0)
 """
 function build_demo(ncell::Integer, xi::Real=0.0)
     return build_demo([(x=>ncell, 1.8) for x in 1:(ncell-1)], xi)
@@ -323,5 +316,7 @@ function run(demo::LiveDemo, stimgen::Stimulus, duration::Real=+Inf)
     return ts
 end
 # ============================================================================ #
+
+include("./RunSim.jl")
 
 end # end module

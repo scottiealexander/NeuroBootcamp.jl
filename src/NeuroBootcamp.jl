@@ -1,6 +1,14 @@
 
 module NeuroBootcamp
 
+using PyCall
+const animation = PyNULL()
+function __init__()
+    copy!(animation, pyimport("matplotlib.animation"))
+end
+
+using PyPlot
+
 include("./LifConfig.jl")
 using .LifConfig
 
@@ -10,17 +18,18 @@ using .Lif
 include("./Networks.jl")
 using .Networks
 
-using PyCall
-const animation = PyNULL()
-function __init__()
-    copy!(animation, pyimport("matplotlib.animation"))
-end
+include("./Histogram/Histogram.jl")
 
-using PyPlot, SpkPlot
+include("./Spk/Spk.jl")
+using .Spk
+
+include("./SpkPlot/SpkPlot.jl")
+using .SpkPlot
 
 import Base.run
 
 export build_demo, build_network, SquareWave, SineWave, run_sim
+export SpkPlot, Spk
 
 abstract type Stimulus end
 # ============================================================================ #

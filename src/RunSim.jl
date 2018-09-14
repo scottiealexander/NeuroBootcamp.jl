@@ -7,14 +7,21 @@ export run_sim
 run_sim(d::LiveDemo, amp::Real=1.0, dur::Real=4.0, nrep::Integer=10)
 """
 function run_sim(d::LiveDemo, amp::Real=1.0, dur::Real=4.0, nrep::Integer=10)
-    return run_sim(d.net, amp, dur, nrep)
+    stim = SineWave(d, amp, 4.0)
+    return run_sim(d.net, stim, dur, nrep)
+end
+"""
+run_sim(d::LiveDemo, stim::Stimulus, dur::Real=4.0, nrep::Integer=10)
+"""
+function run_sim(d::LiveDemo, stim::Stimulus, dur::Real=4.0, nrep::Integer=10)
+    return run_sim(d.net, stim, dur, nrep)
 end
 # ---------------------------------------------------------------------------- #
 """
-run_sim(net::LIFNetwork, amp::Real, dur::Real, nrep::Integer, tstart::Time=0.0,
-    record_vm::Bool=false)
+run_sim(net::LIFNetwork, stim::Stimulus, dur::Real, nrep::Integer,
+    tstart::Time=0.0, record_vm::Bool=false)
 """
-function run_sim(net::LIFNetwork, amp::Real, dur::Real,
+function run_sim(net::LIFNetwork, stim::Stimulus, dur::Real,
     nrep::Integer, tstart::Time=0.0, record_vm::Bool=false)
 
     #dur should be in seconds
@@ -26,13 +33,14 @@ function run_sim(net::LIFNetwork, amp::Real, dur::Real,
 
     evt_ts = tstart:dur:tstart + dur*(nrep-1)
 
-    fstim(id::Integer, t::Float64) = begin
-        if id == 1
-            return amp*((0.5*sin(2.0*pi*(t*1e-3)*4.0))+0.5)
-        else
-            return 0.0
-        end
-    end
+    fstim(id::Integer, t::Float64) = getstim(stim, id, t)
+    # begin
+        # if id == 1
+        #     return amp*((0.5*sin(2.0*pi*(t*1e-3)*4.0))+0.5)
+        # else
+        #     return 0.0
+        # end
+    # end
 
     ts = [Vector{Float64}() for x in 1:ncell]
 

@@ -3,18 +3,18 @@
 
 export f1xfm, cycle_mean
 # ============================================================================ #
-@inline calcf1(cs::Vector{C}, d::Matrix{T}) where {C<:Complex, T<:Real} =
-    abs.(vec(cs' * d))
+@inline calcf1(cs::Vector{C}, d::Matrix{T}) where {C<:Complex,T<:Real} =
+    vec(cs' * d) .* (2.0 / length(cs))
 # ---------------------------------------------------------------------------- #
-@inline calcf1(cs::Vector{C}, d::Vector{T}) where {C<:Complex, T<:Real} =
-    abs.(dot(cs, d))
+@inline calcf1(cs::Vector{C}, d::Vector{T}) where {C<:Complex,T<:Real} =
+    dot(cs, d) .* (2.0 / length(cs))
 # ---------------------------------------------------------------------------- #
 @inline f1basis(npt::Int) = exp.(-im*2.0*pi*range(0.0, stop=1.0, length=npt))
 # ============================================================================ #
 function f1xfm(d::Array{T}, f1::AbstractFloat, dur::AbstractFloat) where {T<:Real}
     bpc = floor(Int, size(d, 1) / (dur * f1))
     tmp = cycle_mean(d, bpc)
-    return calcf1(f1basis(bpc), tmp) * (2.0 / bpc)
+    return calcf1(f1basis(bpc), tmp)
 end
 # ============================================================================ #
 function f1xfm(d::Vector{Matrix{T}}, f1::AbstractFloat,
@@ -37,7 +37,7 @@ function f1xfm(d::Vector{Matrix{T}}, f1::AbstractFloat,
         cs = f1basis(bpc)
 
         @inbounds for k = 1:length(d)
-            out[k] = calcf1(cs, cycle_mean(d[k], bpc)) * (2.0 / bpc)
+            out[k] = calcf1(cs, cycle_mean(d[k], bpc))
         end
     end
 
@@ -72,7 +72,12 @@ end
 function cycle_mean(d::Vector{T}, bpc::Integer) where {T<:Real}
     pad, ncycle = cycle_pad(length(d), bpc)
     den = [fill(ncycle, bpc-pad); fill(ncycle-1, pad)]
-    return vec(sum(reshape(cat(1, d, zeros(T, pad)), bpc, ncycle), 2)) ./ den
+    return vec(
+                sum(
+                    reshape(cat(d, zeros(T, pad), dims=1), bpc, ncycle),
+                    dims=2
+                )
+            ) ./ den
 end
 # ---------------------------------------------------------------------------- #
 function cycle_mean(d::Matrix{T}, bpc::Integer) where {T<:Real}

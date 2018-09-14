@@ -28,8 +28,9 @@ using .SpkPlot
 
 import Base.run
 
-export build_demo, build_network, SquareWave, SineWave, run_sim
-export SpkPlot, Spk
+export build_demo, build_network, SquareWave, SineWave, WhiteNoise, run_sim
+export plot_raster, plot_raster!, plot_cycle_mean, plot_cycle_mean!, plot_xcorr,
+    psth, get_xcorr, f1xfm, cycle_mean
 
 abstract type Stimulus end
 # ============================================================================ #
@@ -179,6 +180,31 @@ function getstim(sw::SineWave, id::Integer, t::Time)
         return sw.amp[id] * ((0.5 * sin(2.0*pi*sw.freq[id]*t)) + 0.5)
     end
     return 0.0
+end
+# ============================================================================ #
+mutable struct WhiteNoise <: Stimulus
+    last_frame::Float64
+    last_value::Float64
+    ifi::Float64
+    mu::Float64
+    sigma::Float64
+end
+function WhiteNoise(mu::Real=0.7, sigma::Real=0.3, ifi::Real=4.0)
+    return WhiteNoise(-Inf, sigma * randn() + mu, ifi, mu, sigma)
+end
+function reset!(wn::WhiteNoise)
+    wn.last_frame = -Inf
+end
+function getstim(wn::WhiteNoise, id::Integer, t::Time)
+    if id == 1
+        if t >= wn.last_frame + wn.ifi
+            wn.last_frame = t
+            wn.last_value = wn.sigma * randn() + wn.mu
+        end
+        return wn.last_value
+    else
+        return 0.0
+    end
 end
 # ============================================================================ #
 mutable struct Keyboard <: Stimulus

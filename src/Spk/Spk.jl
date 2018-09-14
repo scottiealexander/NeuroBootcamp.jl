@@ -1,6 +1,6 @@
 module Spk
 
-using Statistics, FFTW
+using Statistics, FFTW, LinearAlgebra
 using ..Histogram
 
 const AbstractTS = AbstractVector{<:Real}

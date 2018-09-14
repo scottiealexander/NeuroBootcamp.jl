@@ -3,6 +3,12 @@ using Printf
 export run_sim
 
 # ============================================================================ #
+"""
+run_sim(d::LiveDemo, amp::Real=1.0, dur::Real=4.0, nrep::Integer=10)
+
+run_sim(net::LIFNetwork, amp::Real, dur::Real, nrep::Integer, tstart::Time=0.0,
+    record_vm::Bool=false)
+"""
 function run_sim(d::LiveDemo, amp::Real=1.0, dur::Real=4.0, nrep::Integer=10)
     return run_sim(d.net, amp, dur, nrep)
 end

@@ -126,7 +126,7 @@ function build_demo(inp::Vector{Tuple{Pair{T,T}, F}}, xi::Real=0.0) where {T<:In
     return LiveDemo(build_network(inp, xi), 5)
 end
 """
-    build_demo([1=>3, 2=>3])
+    build_demo([1=>3, 2=>3], xi=0.0)
 """
 function build_demo(pairs::Vector{Pair{T,T}}, xi::Real=0.0) where {T<:Integer}
     return build_demo([(x, 1.8) for x in pairs], xi)
@@ -145,8 +145,15 @@ mutable struct SquareWave <: Stimulus
     tlast::Float64
     state::Bool
 end
-function SquareWave(demo::LiveDemo, amp::Float64=1.0, on::Float64=20.0, off::Float64=30.0)
-    return SquareWave([amp; zeros(Float64, length(demo.net)-1)], 20.0, 20.0, 0.0, false)
+"""
+    SquareWave(demo::LiveDemo, amp::Float64=1.0, on::Float64=20.0,
+        off::Float64=30.0)
+"""
+function SquareWave(demo::LiveDemo, amp::Float64=1.0, on::Float64=20.0,
+    off::Float64=30.0)
+
+    return SquareWave([amp; zeros(Float64, length(demo.net)-1)], 20.0, 20.0,
+        0.0, false)
 end
 function reset!(sq::SquareWave)
     sq.state = false
@@ -169,6 +176,9 @@ mutable struct SineWave <: Stimulus
     amp::Vector{Float64}
     freq::Vector{Float64}
 end
+"""
+    SineWave(demo::LiveDemo, amp::Float64=1.0, freq::Float64=25.0)
+"""
 function SineWave(demo::LiveDemo, amp::Float64=1.0, freq::Float64=25.0)
     # frequency needs to be converted to cycles-per-ms for simulations
     return SineWave([amp; zeros(Float64, length(demo.net)-1)],
@@ -189,6 +199,9 @@ mutable struct WhiteNoise <: Stimulus
     mu::Float64
     sigma::Float64
 end
+"""
+    WhiteNoise(mu::Real=0.7, sigma::Real=0.3, ifi::Real=4.0)
+"""
 function WhiteNoise(mu::Real=0.7, sigma::Real=0.3, ifi::Real=4.0)
     return WhiteNoise(-Inf, sigma * randn() + mu, ifi, mu, sigma)
 end
@@ -242,6 +255,10 @@ end
 # ============================================================================ #
 keypressed(s::Stimulus, key::String) = nothing
 # ============================================================================ #
+"""
+    run(demo::LiveDemo, duration::Real=+Inf)
+    run(demo::LiveDemo, stim::Stimulus, duration::Real=+Inf)
+"""
 function run(demo::LiveDemo, duration::Real=+Inf)
     return run(demo, Keyboard(length(demo.net)), duration)
 end

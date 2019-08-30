@@ -4,6 +4,9 @@ module NeuroBootcamp
 using PyCall
 const animation = PyNULL()
 function __init__()
+    # silence the old "QApplication: invalid style override passed, ignoring
+    #  it." warning...
+    Base.eval(Main, :(ENV["QT_STYLE_OVERRIDE"] = ""))
     copy!(animation, pyimport("matplotlib.animation"))
 end
 

@@ -58,17 +58,17 @@ function plot_raster!(ax, ts::Vector{T}, evt::AbstractArray{T,1}, dur::AbstractF
 
     for k = 1:size(p,2)
        idx = findall(p[:,k] .> 0)
-       ax[:plot](idx * bin_size, fill(k, length(idx)), ".", color=color)
+       ax.plot(idx * bin_size, fill(k, length(idx)), ".", color=color)
    end
-   ax[:set_xlabel]("Time (sec)", fontsize=16)
-   ax[:set_ylabel]("Trial #", fontsize=16)
+   ax.set_xlabel("Time (sec)", fontsize=16)
+   ax.set_ylabel("Trial #", fontsize=16)
    return ax
 end
 function plot_raster(ts::Vector{T}, evt::AbstractArray{T,1}, dur::AbstractFloat,
     color::String="blue") where {T<:AbstractFloat}
 
     h = default_figure()
-    return plot_raster!(h[:axes][1], ts, evt, dur, color)
+    return plot_raster!(h.axes[1], ts, evt, dur, color)
 end
 # ============================================================================ #
 function plot_cycle_mean!(ax, ts::Vector{T}, evt::AbstractArray{T,1},
@@ -80,16 +80,16 @@ function plot_cycle_mean!(ax, ts::Vector{T}, evt::AbstractArray{T,1},
     p = psth(ts, evt, 0:nbin-1, bin_size)[1];
 
     cm = cycle_mean(sum(p, dims=2), bpc)
-    h = ax[:plot](range(0, stop=1/tf, length=length(cm)), cm, color=color)
-    ax[:set_xlabel]("Time (sec)", fontsize=16)
-    ax[:set_ylabel]("Firing rate (Hz)", fontsize=16)
+    h = ax.plot(range(0, stop=1/tf, length=length(cm)), cm, color=color)
+    ax.set_xlabel("Time (sec)", fontsize=16)
+    ax.set_ylabel("Firing rate (Hz)", fontsize=16)
     return h
 end
 # ---------------------------------------------------------------------------- #
 function plot_cycle_mean(ts::Vector{T}, evt::AbstractArray{T,1},
     dur::AbstractFloat, tf::AbstractFloat, color::String="blue") where {T<:AbstractFloat}
     h = default_figure()
-    return plot_cycle_mean!(h[:axes][1], ts, evt, dur, tf, color)
+    return plot_cycle_mean!(h.axes[1], ts, evt, dur, tf, color)
 end
 # ============================================================================ #
 end

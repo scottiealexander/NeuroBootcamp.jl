@@ -73,7 +73,7 @@ end
 """
 function LiveDemo(net::LIFNetwork, speed::Int=5)
     h = default_figure()
-    demo = LiveDemo(net, speed, h, h[:axes][1])
+    demo = LiveDemo(net, speed, h, h.axes[1])
     close(h)
     return demo
 end
@@ -83,7 +83,7 @@ function reset!(demo::LiveDemo)
     # issue *AND* we get focus back on the figure when run() exits...
     close(demo.fig)
     demo.fig = default_figure()
-    demo.ax = demo.fig[:axes][1]
+    demo.ax = demo.fig.axes[1]
     Networks.reset!(demo.net)
 end
 # ============================================================================ #
@@ -334,35 +334,35 @@ function run(demo::LiveDemo, stimgen::Stimulus, duration::Real=+Inf)
         end
 
         for kc = 1:ncell
-            data_line[kc][:set_data](time.d, data[kc].d)
-            stim_line[kc][:set_data](time.d, stim[kc].d)
+            data_line[kc].set_data(time.d, data[kc].d)
+            stim_line[kc].set_data(time.d, stim[kc].d)
         end
 
         if TNOW > TMAX
-            demo.ax[:set_xlim](time.d[1], time.last)
+            demo.ax.set_xlim(time.d[1], time.last)
         end
 
-        demo.fig[:canvas][:draw]()
+        demo.fig.canvas.draw()
     end
     # ------------------------------------------------------------------------ #
 
-    anim = animation[:FuncAnimation](demo.fig, run_demo, frames=ncall,
+    anim = animation.FuncAnimation(demo.fig, run_demo, frames=ncall,
         interval=10, repeat=repeat, blit=false)
 
     # ------------------------------------------------------------------------ #
     function key_press(event)
-        if event[:key] == " "
-            anim[:event_source][:stop]()
-        elseif event[:key] == "enter"
-            anim[:event_source][:start]()
+        if event.key == " "
+            anim.event_source.stop()
+        elseif event.key == "enter"
+            anim.event_source.start()
         else
-            keypressed(stimgen, event[:key])
+            keypressed(stimgen, event.key)
         end
     end
     # ------------------------------------------------------------------------ #
 
     if repeat
-        plt[:connect]("key_press_event", key_press)
+        plt.connect("key_press_event", key_press)
     end
 
     return ts

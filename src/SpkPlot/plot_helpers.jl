@@ -11,8 +11,8 @@ function plot_with_error(x::AbstractArray, y::Vector, yerr::Vector,
     end
     col_array = [col.r, col.g, col.b]
     fcol, ecol = shading_color(col_array)
-    ax[:fill_between](x, y.-yerr, y.+yerr, facecolor=fcol, edgecolor=ecol)
-    ax[:plot](x, y, "-", color=col_array, linewidth=linewidth, args...)
+    ax.fill_between(x, y.-yerr, y.+yerr, facecolor=fcol, edgecolor=ecol)
+    ax.plot(x, y, "-", color=col_array, linewidth=linewidth, args...)
 end
 # ---------------------------------------------------------------------------- #
 function shading_color(col::Vector{T}) where {T<:Number}
@@ -91,26 +91,26 @@ function qbar(y)
 end
 # ============================================================================ #
 function closeall()
-    plt[:close]()
+    plt.close()
 end
 # ============================================================================ #
 default_figure() = default_figure(figure())
 # ---------------------------------------------------------------------------- #
 function default_figure(h::PyPlot.Figure)
 
-    if !plt[:fignum_exists](h[:number])
+    if !plt.fignum_exists(h.number)
         h = figure()
     end
 
-    h[:set_facecolor]("white")
-    ax = h[:get_axes]()
+    h.set_facecolor("white")
+    ax = h.get_axes()
     if !isempty(ax)
         for x in ax
             delaxes(x)
         end
     end
 
-    ax = h[:add_axes](default_axes())
+    ax = h.add_axes(default_axes())
 
     return h
 end
@@ -120,21 +120,21 @@ function default_axes(ax=nothing)
         ax = PyPlot.axes()
     end
     #set ticks to face out
-    ax[:tick_params](direction="out", length=8.0, width=4.0)
+    ax.tick_params(direction="out", length=8.0, width=4.0)
 
     #turn off top and right axes
-    ax[:spines]["right"][:set_visible](false)
-    ax[:spines]["top"][:set_visible](false)
+    ax.spines["right"].set_visible(false)
+    ax.spines["top"].set_visible(false)
 
     #remove top and right tick marks
-    tmp = ax[:get_xaxis]()
-    tmp[:tick_bottom]()
+    tmp = ax.get_xaxis()
+    tmp.tick_bottom()
 
-    tmp = ax[:get_yaxis]()
-    tmp[:tick_left]()
+    tmp = ax.get_yaxis()
+    tmp.tick_left()
 
-    ax[:spines]["left"][:set_linewidth](4.0)
-    ax[:spines]["bottom"][:set_linewidth](4.0)
+    ax.spines["left"].set_linewidth(4.0)
+    ax.spines["bottom"].set_linewidth(4.0)
 
     return ax
 end
@@ -144,7 +144,7 @@ end
 # NOTES
 # ============================================================================ #
 #  #update figure
-#  h[:canvas][:draw]()
+#  h.canvas.draw()
 #
 #  #close all figures
-#  plt[:close]()
+#  plt.close()

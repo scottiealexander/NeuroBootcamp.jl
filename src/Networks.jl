@@ -23,7 +23,7 @@ end
 # ---------------------------------------------------------------------------- #
 function LIFNetwork(x::Array{T,1}) where {T<:BaseNeuron}
     n = length(x)
-    LIFNetwork(x, Array{BaseSynapse,2}(n, n))
+    LIFNetwork(x, Array{BaseSynapse,2}(undef, n, n))
 end
 # ---------------------------------------------------------------------------- #
 function LIFNetwork(n::Integer, xi::Float64=0.2, typ::Type{T}=LIFNeuron) where {T<:BaseNeuron}

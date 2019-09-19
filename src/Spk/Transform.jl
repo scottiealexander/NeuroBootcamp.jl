@@ -23,7 +23,7 @@ function f1xfm(d::Vector{Matrix{T}}, f1::AbstractFloat,
     siz = size(d[1], 1)
     check_size(x::Matrix{T}) = size(x, 1) == siz
 
-    out = [Vector{Float64}(size(d[k], 2)) for k in 1:length(d)]
+    out = [Vector{Float64}(undef, size(d[k], 2)) for k in 1:length(d)]
 
     if !all(check_size, d[2:end])
         # psth matricies have different number of bins so the f1basis must be
@@ -49,7 +49,7 @@ function f1xfm(d::Vector{Matrix{T}}, f1::Vector{F},
 
     length(f1) != length(d) && error("Number of temporal frequencies and number of trial groups *MUST* match")
 
-    out = Vector{Vector{Float64}}(length(d))
+    out = Vector{Vector{Float64}}(undef, length(d))
 
     @inbounds for k = 1:length(d)
         out[k] = f1xfm(d[k], f1[k], dur)
@@ -59,7 +59,7 @@ function f1xfm(d::Vector{Matrix{T}}, f1::Vector{F},
 end
 # ============================================================================ #
 function cycle_pad(npt::Int, bpc::Integer)
-    ncycle = floor(Int64, npt / bpc)
+    ncycle = floor(Int, npt / bpc)
     if npt % bpc > 0
         ncycle += 1
         npad = (bpc * ncycle) - npt

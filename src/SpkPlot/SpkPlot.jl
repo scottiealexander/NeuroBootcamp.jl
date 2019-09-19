@@ -72,9 +72,9 @@ function plot_raster(ts::Vector{T}, evt::AbstractArray{T,1}, dur::AbstractFloat,
 end
 # ============================================================================ #
 function plot_cycle_mean!(ax, ts::Vector{T}, evt::AbstractArray{T,1},
-    dur::AbstractFloat, tf::AbstractFloat, color::String="blue") where {T<:AbstractFloat}
+    dur::AbstractFloat, tf::AbstractFloat; bin_size::Real=0.01,
+    color::String="blue") where {T<:AbstractFloat}
 
-    bin_size = 0.001
     nbin = floor(Int, dur / bin_size)
     bpc = floor(Int, 1/(tf * bin_size))
     p = psth(ts, evt, 0:nbin-1, bin_size)[1];
@@ -87,9 +87,13 @@ function plot_cycle_mean!(ax, ts::Vector{T}, evt::AbstractArray{T,1},
 end
 # ---------------------------------------------------------------------------- #
 function plot_cycle_mean(ts::Vector{T}, evt::AbstractArray{T,1},
-    dur::AbstractFloat, tf::AbstractFloat, color::String="blue") where {T<:AbstractFloat}
+    dur::AbstractFloat, tf::AbstractFloat; bin_size::Real=0.01,
+    color::String="blue") where {T<:AbstractFloat}
+
     h = default_figure()
-    return plot_cycle_mean!(h.axes[1], ts, evt, dur, tf, color)
+
+    return plot_cycle_mean!(h.axes[1], ts, evt, dur, tf, bin_size=bin_size,
+        color=color)
 end
 # ============================================================================ #
 end

@@ -37,7 +37,7 @@ function psth(ts::Vector{Float64}, evt::AbstractArray{<:Real},
 
     # Int8 is acceptable so long as we are assiging 1 to the <kspk> elements
     # (see warning below)
-    bsv = zeros(Int8, max_time)
+    bsv = zeros(Int, max_time)
 
     @inbounds @fastmath for k in eachindex(kspk)
         bsv[kspk[k]] += 1

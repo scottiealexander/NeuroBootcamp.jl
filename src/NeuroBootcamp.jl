@@ -105,8 +105,8 @@ function build_network(inp::Vector{Tuple{Pair{T,T}, F}}, xi::Real=0.0) where {T<
     net = LIFNetwork(ncell, xi)
 
     for x in net
-        Lif.set!(x, :threshold, 1.8)
-        Lif.set!(x, :rm, 3.5)
+        Lif.set!(x, :threshold, 1.0)
+        Lif.set!(x, :rm, 1.0)
         Lif.set!(x, :tau, 4.5)
         Lif.set!(x, :vspike, 4.0)
     end
@@ -239,6 +239,10 @@ function keypressed(s::Keyboard, key::String)
         if 0 < id <= length(s.state)
             s.state[id] = !s.state[id]
         end
+    elseif key == "down"
+        s.amp .-= s.inc
+    elseif key == "up"
+        s.amp .+= s.inc
     end
 end
 # ============================================================================ #

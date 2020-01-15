@@ -201,12 +201,13 @@ mutable struct WhiteNoise <: Stimulus
     ifi::Float64
     mu::Float64
     sigma::Float64
+    # history::Vector{Float64}
 end
 """
     WhiteNoise(mu::Real=0.7, sigma::Real=0.3, ifi::Real=4.0)
 """
 function WhiteNoise(mu::Real=0.7, sigma::Real=0.3, ifi::Real=4.0)
-    return WhiteNoise(-Inf, sigma * randn() + mu, ifi, mu, sigma)
+    return WhiteNoise(-Inf, sigma * randn() + mu, ifi, mu, sigma)#, Float64[])
 end
 function reset!(wn::WhiteNoise)
     wn.last_frame = -Inf
@@ -216,6 +217,7 @@ function getstim(wn::WhiteNoise, id::Integer, t::Time)
         if t >= wn.last_frame + wn.ifi
             wn.last_frame = t
             wn.last_value = wn.sigma * randn() + wn.mu
+            # push!(wn.history, wn.last_value)
         end
         return wn.last_value
     else

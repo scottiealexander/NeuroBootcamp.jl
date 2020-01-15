@@ -53,6 +53,8 @@ function run_sim(net::LIFNetwork, stim::Stimulus, dur::Real,
 
     @inbounds for kr = 1:nrep
 
+        reset!(stim)
+        Networks.reset!(net)
         d = simulate(net, fstim, dur*1e3, rec)
 
         @inbounds for k = 1:ncell
